@@ -1,0 +1,10 @@
+What is Retrieval-Augmented Generation (RAG)?
+Retrieval-Augmented Generation (RAG) is a technique that enhances large language models (LLMs) by providing them with external knowledge. 
+
+How it works:
+1. When a user asks a question, the system searches a knowledge base (usually a Vector Database) for relevant information.
+2. The search is performed using embeddings, which are mathematical representations of the text's meaning.
+3. The relevant information retrieved from the database is combined with the user's original question.
+4. This combined text is sent to the LLM, which generates a final, highly accurate answer based only on the provided context.
+
+RAG prevents hallucinations and allows LLMs to access private or up-to-date data without needing to be retrained.

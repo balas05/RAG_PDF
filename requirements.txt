@@ -1,0 +1,6 @@
+PyMuPDF
+easyocr
+langchain-text-splitters
+sentence-transformers
+chromadb
+flask

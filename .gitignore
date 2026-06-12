@@ -1,0 +1,13 @@
+# Environment Variables (NEVER UPLOAD API KEYS)
+.env
+
+# Python Caches
+__pycache__/
+*.pyc
+
+# Vector Database (Too large for GitHub)
+chroma_db/
+
+# Data Files (Optional: Ignores PDFs so you don't upload massive files)
+data/pdfs/*.pdf
+data/images/

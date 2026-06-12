@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise RAG Search</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --background: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #4338CA;
+        }
+        .loading {
+            text-align: center;
+            color: var(--text-muted);
+            display: none;
+        }
+        .result-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .badge {
+            background-color: #EEF2FF;
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        .keyword-badge {
+            background-color: #DEF7EC;
+            color: #03543F;
+            margin-left: 10px;
+        }
+        .snippet {
+            line-height: 1.6;
+            color: var(--text-main);
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Enterprise Document Search</h1>
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">
+        Search across PDFs and Images using Hybrid (Keyword + Semantic) Search
+    </p>
+
+    <div class="search-box">
+        <input type="text" id="queryInput" placeholder="E.g., 'maternity leave policy' or 'INV-12345'..." onkeypress="handleKeyPress(event)">
+        <button onclick="performSearch()">Search</button>
+    </div>
+
+    <div class="loading" id="loading">Searching knowledge base...</div>
+    <div id="resultsContainer"></div>
+</div>
+
+<script>
+    async function performSearch() {
+        const query = document.getElementById('queryInput').value;
+        if (!query) return;
+
+        const resultsContainer = document.getElementById('resultsContainer');
+        const loading = document.getElementById('loading');
+        
+        resultsContainer.innerHTML = '';
+        loading.style.display = 'block';
+
+        try {
+            const response = await fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ query: query })
+            });
+            
+            const data = await response.json();
+            loading.style.display = 'none';
+
+            if (data.results && data.results.length > 0) {
+                data.results.forEach(result => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card';
+                    
+                    let keywordHtml = result.keyword_match ? '<span class="badge keyword-badge">Exact Match Found</span>' : '';
+
+                    card.innerHTML = `
+                        <div class="result-header">
+                            <div>
+                                <span class="badge">${result.type.toUpperCase()}</span>
+                                <strong style="margin-left: 8px;">${result.file}</strong> (Page ${result.page})
+                                ${keywordHtml}
+                            </div>
+                        </div>
+                        <div class="snippet">... ${result.snippet} ...</div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+            } else {
+                resultsContainer.innerHTML = '<p style="text-align: center; color: #6B7280;">No relevant documents found in the database.</p>';
+            }
+        } catch (error) {
+            loading.style.display = 'none';
+            resultsContainer.innerHTML = '<p style="text-align: center; color: red;">Error performing search. Is the server running?</p>';
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            performSearch();
+        }
+    }
+</script>
+
+</body>
+</html>
