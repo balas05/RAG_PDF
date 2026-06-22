@@ -3,4 +3,8 @@ easyocr
 langchain-text-splitters
 sentence-transformers
 chromadb
-flask
+fastapi
+uvicorn
+jinja2
+langchain-google-genai
+python-dotenv

@@ -3,176 +3,452 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise RAG Search</title>
+    <title>AI Document Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4F46E5;
-            --background: #F9FAFB;
-            --card-bg: #FFFFFF;
-            --text-main: #111827;
-            --text-muted: #6B7280;
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --primary-color: #000000;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --user-msg-bg: #000000;
+            --bot-msg-bg: #f9fafb;
+            --border-color: #e5e7eb;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--background);
-            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
             margin: 0;
             padding: 0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        .search-box {
             display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
         }
-        input[type="text"] {
-            flex: 1;
-            padding: 15px 20px;
-            font-size: 1.1rem;
-            border: 2px solid #E5E7EB;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        input[type="text"]:focus {
-            border-color: var(--primary);
-        }
-        button {
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #4338CA;
-        }
-        .loading {
-            text-align: center;
-            color: var(--text-muted);
-            display: none;
-        }
-        .result-card {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        .result-header {
+
+        .chat-container {
+            width: 100%;
+            max-width: 850px;
+            height: 92vh;
+            background-color: var(--surface-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-header {
+            padding: 24px 32px;
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            letter-spacing: -0.02em;
+        }
+
+        .chat-header p {
+            margin: 4px 0 0 0;
             font-size: 0.9rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
-        .badge {
-            background-color: #EEF2FF;
-            color: var(--primary);
-            padding: 4px 8px;
-            border-radius: 4px;
+
+        .header-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 1.2rem;
         }
-        .keyword-badge {
-            background-color: #DEF7EC;
-            color: #03543F;
-            margin-left: 10px;
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 32px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            scroll-behavior: smooth;
         }
-        .snippet {
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-wrapper.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message-wrapper.bot {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message {
+            padding: 16px 20px;
+            border-radius: 12px;
             line-height: 1.6;
-            color: var(--text-main);
-            margin-top: 10px;
+            font-size: 1rem;
+            position: relative;
+        }
+
+        .message.user {
+            background: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot {
+            background-color: var(--bot-msg-bg);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        .context-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 8px;
+            cursor: pointer;
+            padding: 0;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+
+        .context-btn:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+
+        .context-box {
+            display: none;
+            margin-top: 8px;
+            padding: 12px;
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .chat-input-area {
+            padding: 24px 32px;
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+        }
+
+        .suggestions-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: auto;
+        }
+
+        .suggestions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .suggestion-chip {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 14px 20px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+            min-height: 52px;
+            
+            /* Text wrapping rules as requested */
+            white-space: normal;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+
+        .suggestion-chip:hover {
+            background-color: var(--bot-msg-bg);
+            border-color: #d1d5db;
+        }
+
+        @media (max-width: 600px) {
+            .suggestions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-wrapper {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 24px;
+            padding-right: 60px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bot-msg-bg);
+            color: var(--text-primary);
+            font-size: 1.05rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: var(--surface-color);
+        }
+
+        .input-wrapper button {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-wrapper button:hover {
+            transform: scale(1.05);
+        }
+
+        .input-wrapper button:active {
+            transform: scale(0.95);
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 6px;
+            padding: 4px 0;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            animation: pulse 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes pulse {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Enterprise Document Search</h1>
-    <p style="text-align: center; color: var(--text-muted); margin-bottom: 30px;">
-        Search across PDFs and Images using Hybrid (Keyword + Semantic) Search
-    </p>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="header-icon">AI</div>
+            <div>
+                <h1>Enterprise RAG Assistant</h1>
+                <p>AI-powered answers from your knowledge base</p>
+            </div>
+        </div>
 
-    <div class="search-box">
-        <input type="text" id="queryInput" placeholder="E.g., 'maternity leave policy' or 'INV-12345'..." onkeypress="handleKeyPress(event)">
-        <button onclick="performSearch()">Search</button>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message-wrapper bot">
+                <div class="message bot">
+                    Hello! I'm your AI assistant. I can answer questions by reading through your enterprise documents. What do you need help with today?
+                </div>
+            </div>
+            
+            <div class="suggestions-container" id="welcome-suggestions">
+                <div class="suggestions">
+                    <button type="button" class="suggestion-chip" onclick="useSuggestion(this)">📄 Summarize this document</button>
+                    <button type="button" class="suggestion-chip" onclick="useSuggestion(this)">📌 What are the key points?</button>
+                    <button type="button" class="suggestion-chip" onclick="useSuggestion(this)">🧠 Explain this topic</button>
+                    <button type="button" class="suggestion-chip" onclick="useSuggestion(this)">🔍 Find important information</button>
+                    <button type="button" class="suggestion-chip" onclick="useSuggestion(this)">📋 Extract the main insights</button>
+                    <button type="button" class="suggestion-chip" onclick="useSuggestion(this)">❓ What should I know about this?</button>
+                </div>
+            </div>
+        </div>
+
+        <form class="chat-input-area" id="chat-form">
+            <div class="input-wrapper">
+                <input type="text" id="question-input" placeholder="Ask a question about your documents..." autocomplete="off" required>
+                <button type="submit">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </form>
     </div>
 
-    <div class="loading" id="loading">Searching knowledge base...</div>
-    <div id="resultsContainer"></div>
-</div>
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const questionInput = document.getElementById('question-input');
+        const chatMessages = document.getElementById('chat-messages');
 
-<script>
-    async function performSearch() {
-        const query = document.getElementById('queryInput').value;
-        if (!query) return;
+        function useSuggestion(btn) {
+            questionInput.value = btn.textContent;
+            chatForm.requestSubmit();
+        }
 
-        const resultsContainer = document.getElementById('resultsContainer');
-        const loading = document.getElementById('loading');
-        
-        resultsContainer.innerHTML = '';
-        loading.style.display = 'block';
-
-        try {
-            const response = await fetch('/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({ query: query })
-            });
-            
-            const data = await response.json();
-            loading.style.display = 'none';
-
-            if (data.results && data.results.length > 0) {
-                data.results.forEach(result => {
-                    const card = document.createElement('div');
-                    card.className = 'result-card';
-                    
-                    let keywordHtml = result.keyword_match ? '<span class="badge keyword-badge">Exact Match Found</span>' : '';
-
-                    card.innerHTML = `
-                        <div class="result-header">
-                            <div>
-                                <span class="badge">${result.type.toUpperCase()}</span>
-                                <strong style="margin-left: 8px;">${result.file}</strong> (Page ${result.page})
-                                ${keywordHtml}
-                            </div>
-                        </div>
-                        <div class="snippet">... ${result.snippet} ...</div>
-                    `;
-                    resultsContainer.appendChild(card);
-                });
+        function toggleContext(btn) {
+            const contextBox = btn.nextElementSibling;
+            if (contextBox.style.display === 'block') {
+                contextBox.style.display = 'none';
+                btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg> Show Context`;
             } else {
-                resultsContainer.innerHTML = '<p style="text-align: center; color: #6B7280;">No relevant documents found in the database.</p>';
+                contextBox.style.display = 'block';
+                btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg> Hide Context`;
             }
-        } catch (error) {
-            loading.style.display = 'none';
-            resultsContainer.innerHTML = '<p style="text-align: center; color: red;">Error performing search. Is the server running?</p>';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-    }
 
-    function handleKeyPress(event) {
-        if (event.key === 'Enter') {
-            performSearch();
+        function appendMessage(content, sender, context = null) {
+            const wrapperDiv = document.createElement('div');
+            wrapperDiv.className = `message-wrapper ${sender}`;
+            
+            let messageHtml = `<div class="message ${sender}">${content}</div>`;
+            
+            if (context) {
+                messageHtml += `
+                    <button class="context-btn" onclick="toggleContext(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg> Show Context
+                    </button>
+                    <div class="context-box">${context.replace(/\n/g, '<br>')}</div>
+                `;
+            }
+            
+            wrapperDiv.innerHTML = messageHtml;
+            chatMessages.appendChild(wrapperDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return wrapperDiv;
         }
-    }
-</script>
 
+        function showLoading() {
+            const wrapperDiv = document.createElement('div');
+            wrapperDiv.className = `message-wrapper bot`;
+            wrapperDiv.innerHTML = `
+                <div class="message bot">
+                    <div class="loading-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(wrapperDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return wrapperDiv;
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            // Hide suggestions on first interaction
+            const welcomeSuggestions = document.getElementById('welcome-suggestions');
+            if (welcomeSuggestions) {
+                welcomeSuggestions.style.display = 'none';
+            }
+
+            appendMessage(question, 'user');
+            questionInput.value = '';
+
+            const loadingMsg = showLoading();
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+
+                const data = await response.json();
+                loadingMsg.remove();
+
+                if (response.ok) {
+                    appendMessage(data.answer, 'bot', data.context);
+                } else {
+                    appendMessage(`Error: ${data.error}`, 'bot');
+                }
+            } catch (err) {
+                loadingMsg.remove();
+                appendMessage('Failed to connect to the server. Please ensure the Flask app is running.', 'bot');
+            }
+        });
+    </script>
 </body>
 </html>
